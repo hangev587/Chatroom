@@ -1,42 +1,56 @@
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <stdio.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdlib.h>
-#include <fcntl.h>
-#include <sys/shm.h>
-#include <iostream>
-using namespace std;
+#include "client.h"
 
-int main(){
-    int sock_cli = socket(AF_INET, SOCK_STREAM, 0);
+client::client(int port, string ip):server_port(port), server_ip(ip){}
+
+client::~client(){
+    close(sock);
+}
+
+void client::run(){
+    sock = socket(AF_INET, SOCK_STREAM, 0);
 
     struct sockaddr_in servaddr;
     memset(&servaddr, 0, sizeof(servaddr));
     servaddr.sin_family = AF_INET;
-    servaddr.sin_port = htons(8023);
-    servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    servaddr.sin_port = htons(server_port);
+    servaddr.sin_addr.s_addr = inet_addr(server_ip.c_str());
 
-    if(connect(sock_cli, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0){
+    if(connect(sock, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0){
         perror("connect");
         exit(1);
     }
-    cout << "Success Connect to Service!\n" << endl;
+    cout << "Success connect to server!" << endl;
 
+    thread send_t(SendMsg, sock), recv_t(RecvMsg, sock);
+    send_t.join();
+    cout << "send thread finish." << endl;
+    recv_t.join();
+    cout << "recv thread finish." << endl;
+    return;
+}
+
+void client::SendMsg(int conn){
     char sendbuf[100];
-    char recvbuf[100];
     while(1){
         memset(sendbuf, 0, sizeof(sendbuf));
         cin >> sendbuf;
-        send(sock_cli, sendbuf, strlen(sendbuf), 0);
-        if(strcmp(sendbuf, "exit") == 0){
+        int ret = send(conn, sendbuf, strlen(sendbuf), 0);
+        if(strcmp(sendbuf, "exit") == 0 || ret <= 0){
             break;
         }
     }
-    close(sock_cli);
+}
 
-    return 0;
+void client::RecvMsg(int conn){
+    char recvbuf[1000];
+    while(1){
+        memset(recvbuf, 0, sizeof(recvbuf));
+        int len = recv(conn, recvbuf, sizeof(recvbuf), 0);
+        if(len <= 0){
+            break;
+        }
+        else{
+            cout << "Recv ser msg: " << recvbuf << endl;
+        }
+    }
 }

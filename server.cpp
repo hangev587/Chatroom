@@ -2,9 +2,13 @@
 
 server::server(int port, string ip):server_port(port), server_ip(ip){}
 
+vector<bool> server::sock_arr(10000, false);
+
 server::~server(){
-    for(auto conn:sock_arr){
-        close(conn);
+    for(int i=0; i<sock_arr.size(); i++){
+        if(sock_arr[i]){
+            close(i);
+        }
     }
     close(server_sockfd);
 }
@@ -44,13 +48,27 @@ void server::run(){
 }
 
 void server::RecvMsg(int conn){
-    char buffer[1000];
+    char recvbuf[1000];
     while(1){
-        memset(buffer, 0, sizeof(buffer));
-        int len = recv(conn, buffer, sizeof(buffer), 0);
-        if(strcmp(buffer, "exit") == 0 || len <= 0){
+        memset(recvbuf, 0, sizeof(recvbuf));
+        int len = recv(conn, recvbuf, sizeof(recvbuf), 0);
+        if(strcmp(recvbuf, "exit") == 0 || len <= 0){
+            cout << "Disconnect with: [" << conn << "]!" << endl;
+            close(conn);
+            sock_arr[conn] = false;
             break;
         }
-        cout << "Recv cli [" << conn << "] msg: " << buffer << endl;
+        else{
+            cout << "Recv cli [" << conn << "] msg: " << recvbuf << endl;
+        }
+        
+        string ans = "Received!";
+        int ret = send(conn, ans.c_str(), ans.length(), 0);
+        // int ret = send(conn, recvbuf, strlen(recvbuf), 0);
+        if(ret <= 0){
+            close(conn);
+            sock_arr[conn] = false;
+            break;
+        }
     }
 }
