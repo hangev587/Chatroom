@@ -21,11 +21,13 @@ void client::run(){
     }
     cout << "Success connect to server!" << endl;
 
-    thread send_t(SendMsg, sock), recv_t(RecvMsg, sock);
-    send_t.join();
-    cout << "send thread finish." << endl;
-    recv_t.join();
-    cout << "recv thread finish." << endl;
+    // thread send_t(SendMsg, sock), recv_t(RecvMsg, sock);
+    // send_t.join();
+    // cout << "send thread finish." << endl;
+    // recv_t.join();
+    // cout << "recv thread finish." << endl;
+    HandleClient(sock);
+
     return;
 }
 
@@ -51,6 +53,52 @@ void client::RecvMsg(int conn){
         }
         else{
             cout << "Recv ser msg: " << recvbuf << endl;
+        }
+    }
+}
+
+void client::HandleClient(int conn){
+    int choice;
+    string name, pass, pass1;
+
+    while(1){
+        cout << "----------------------------" << endl;
+        cout << "|                          |" << endl;
+        cout << "|Please input your choice: |" << endl;
+        cout << "|      0: Exit             |" << endl;
+        cout << "|      1: Login            |" << endl;
+        cout << "|      2: Registration     |" << endl;
+        cout << "|                          |" << endl;
+        cout << "----------------------------" << endl;
+
+        cin >> choice;
+
+        if(choice == 0){
+            break;
+        }
+
+        else if(choice == 2){
+            cout << "Please input your username: ";
+            cin >> name;
+            while(1){
+                cout << "Please input your password: ";
+                cin >> pass;
+                cout << "Please reconize your password: ";
+                cin >> pass1;
+                if(pass == pass1){
+                    break;
+                }
+                else{
+                    cout << "Password does not match, please retype" << endl;
+                }
+            }
+
+            name = "name:" + name;
+            pass = "pass:" + pass;
+            string str = name + pass;
+
+            send(conn, str.c_str(), str.length(), 0);
+            cout << "Registration Successed!" << endl;
         }
     }
 }

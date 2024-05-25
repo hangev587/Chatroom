@@ -14,6 +14,7 @@ class server{
         ~server();
         void run();
         static void RecvMsg(int conn);
+        static void HandleRequest(int conn, string str);
 };
 
 #endif
